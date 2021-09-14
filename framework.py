@@ -27,15 +27,26 @@ class ModelGraph:
         }
 
         self.graph = []
+        self.get_graphs()
+
+        self.matrix = [nx.to_numpy_matrix(graph) for graph in self.graph]
+
+    def get_graphs(self):
         for ag in range(self.n_ag):
             graph = nx.DiGraph()
             graph.add_nodes_from(nodes_for_adding=self.nodes)
-            graph.add_weighted_edges_from(
-                ebunch_to_add=[edge + (weight[ag] if isinstance(weight, list) else weight, )
-                               for edge, weight in self.edge_weights.items()]
-            )
+            weighted_edges = []
+            for edge, weight in self.edge_weights.items():
+                if isinstance(weight, np.ndarray):
+                    if len(weight) == self.n_ag:
+                        edge_weight = weight[ag]
+                    else:
+                        edge_weight = weight[0]
+                else:
+                    edge_weight = weight
+                weighted_edges.append(edge + (edge_weight,))
+            graph.add_weighted_edges_from(ebunch_to_add=weighted_edges)
             self.graph.append(graph)
-        self.matrix = [nx.to_numpy_matrix(graph) for graph in self.graph]
 
 
 def main():
@@ -61,28 +72,28 @@ def main():
     model = ModelGraph(graph_dict=graph_dict_1)
     print(model.matrix)
 
-    # graph_dict_2 = {
-    #     "age_groups": 3,
-    #     "nodes": {
-    #         "S": {"init": [1000, 2000, 1000]},
-    #         "I": {"init": [1, 0, 1]},
-    #         "R": {"init": [0, 1, 0]}
-    #     },
-    #     "edges": {
-    #         ("S", "I"): {
-    #             "weight": 0.01
-    #         },
-    #         ("I", "R"): {
-    #             "weight": [1 / 5.0, 1 / 4.0, 1 / 6.0]
-    #         }
-    #     },
-    #     "transmission": {
-    #         ("I", "S", "I"):
-    #             {"param": 1.0}
-    #     }
-    # }
-    # model = ModelGraph(graph_dict=graph_dict_2)
-    # print(model.matrix)
+    graph_dict_2 = {
+        "age_groups": 3,
+        "nodes": {
+            "S": {"init": [1000, 2000, 1000]},
+            "I": {"init": [1, 0, 1]},
+            "R": {"init": [0, 1, 0]}
+        },
+        "edges": {
+            ("S", "I"): {
+                "weight": 0.01
+            },
+            ("I", "R"): {
+                "weight": [1 / 5.0, 1 / 4.0, 1 / 6.0]
+            }
+        },
+        "transmission": {
+            ("I", "S", "I"):
+                {"param": 1.0}
+        }
+    }
+    model = ModelGraph(graph_dict=graph_dict_2)
+    print(model.matrix)
 
 
 if __name__ == '__main__':
