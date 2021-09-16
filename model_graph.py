@@ -77,3 +77,43 @@ class ModelGraph:
             graph.add_weighted_edges_from(ebunch_to_add=weighted_edges)
             # Append new graph to the list of graphs
             self.graph.append(graph)
+
+
+def main():
+    graph_dict = {
+        "age_groups": 3,
+        "nodes": {
+            "S": {"init": 1000 - 11},
+            "E": {"init": 10},
+            "I": {"init": 1},
+            "R": {"init": 0}
+        },
+        # key pair: (state_from, state_to)
+        "edges": {
+            ("S", "E"): {
+                "weight": 2.5 * 0.25 / 1000
+            },
+            ("E", "I"): {
+                "weight": 0.2
+            },
+            ("I", "R"): {
+                "weight": 0.25
+            }
+        },
+        # key triplet: (infectious, susceptible, infected)
+        "transmission": {
+            ("I", "S", "E"):
+            # parameter enabling various infectivity
+                {"param": 1.0}
+        },
+        "contact_matrix":
+            [[1, 1, 1],
+             [1, 1, 1],
+             [1, 1, 1]]
+    }
+    model = ModelGraph(graph_dict=graph_dict)
+    print(model.param_mtx)
+
+
+if __name__ == '__main__':
+    main()

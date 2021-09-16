@@ -52,7 +52,10 @@ class Simulator:
         run_start = time()
 
         # Run first step
+        start = time()
         age, c_from, c_to = self.run_one_step()
+        end = time()
+        dur_one.append(end - start)
         i = self.state_var[-1][self.c_idx["I"]]
 
         # Halting condition: (i = 0) <- used in while cycle
@@ -83,15 +86,18 @@ class Simulator:
         self.state_var = np.array(self.state_var)
         run_end = time()
 
-        print("Average transition", sum(dur_trn) / len(dur_trn))
-        print("Average transmission", sum(dur_trm) / len(dur_trm))
-        print("Average run one step", sum(dur_one) / len(dur_one))
-        print("Full run:", run_end - run_start)
+        if len(dur_trn) > 0:
+            print("Average transition", sum(dur_trn) / len(dur_trn))
+            print("Average transmission", sum(dur_trm) / len(dur_trm))
+            print("Average run one step", sum(dur_one) / len(dur_one))
+            print("Full run:", run_end - run_start)
+        else:
+            print("There was no step in the simulation!")
 
     def run_one_step(self) -> Tuple[int, int, int]:
         # Propensity matrix
         p_mtx = self.P_trn * self.P_trm
-        a = np.sum(p_mtx)
+        a = float(np.sum(p_mtx))
 
         # 3. Decide when will the next reaction occur:
         # --------------------------------------------#
@@ -171,3 +177,39 @@ class Simulator:
             for n_from, n_to in self.edge_dict[self.idx_c[ch_node]]:
                 self.P_trn[age, n_from, n_to] = \
                     self.last_state[n_from, age] * self.model.param_mtx[age, n_from, n_to]
+
+
+def main():
+    graph_dict = {
+        "age_groups": 1,
+        "nodes": {
+            "S": {"init": 1000 - 11},
+            "E": {"init": 10},
+            "I": {"init": 1},
+            "R": {"init": 0}
+        },
+        # key pair: (state_from, state_to)
+        "edges": {
+            ("S", "E"): {
+                "weight": 2.5 * 0.25 / 1000
+            },
+            ("E", "I"): {
+                "weight": 0.2
+            },
+            ("I", "R"): {
+                "weight": 0.25
+            }
+        },
+        # key triplet: (infectious, susceptible, infected)
+        "transmission": {
+            ("I", "S", "E"):
+            # parameter enabling various infectivity
+                {"param": 1.0}
+        }
+    }
+    sim = Simulator(graph_dict=graph_dict)
+    sim.run()
+
+
+if __name__ == '__main__':
+    main()
