@@ -1,19 +1,17 @@
 import random
-from time import time
 from typing import Tuple
 
 import numpy as np
 
 from model_graph import ModelGraph
 
-dur_trn = []
-dur_trm = []
-dur_one = []
-
 
 class Simulator:
     def __init__(self, graph_dict):
         self.model = ModelGraph(graph_dict=graph_dict)
+
+        # Population vector
+        self.pop = np.array(graph_dict["pop"])
 
         # t = 0
         self.time_series = [0.0]  # [0,t1,t2,t3,...]
@@ -26,7 +24,7 @@ class Simulator:
         self.state_var = [self.init_vals]
 
         # last state
-        self.last_state = self.init_vals
+        self.last_state = np.copy(self.init_vals)
 
         # number of age groups
         self.n_ag = self.model.n_ag
@@ -49,50 +47,65 @@ class Simulator:
         self.create_transmission_matrix()
 
     def run(self):
-        run_start = time()
+        # Reset age, c_from, c_to
+        age, c_from, c_to = None, None, None
 
-        # Run first step
-        start = time()
-        age, c_from, c_to = self.run_one_step()
-        end = time()
-        dur_one.append(end - start)
+        # initialize variable for halting condition
         i = self.state_var[-1][self.c_idx["I"]]
 
         # Halting condition: (i = 0) <- used in while cycle
-        # cntr = 0
         while np.sum(i) > 0:
-            # Update propensity matrices
-            # Transition
-            start = time()
-            self.update_transition_matrix(age, c_from, c_to)
-            end = time()
-            dur_trn.append(end - start)
-            # Transmission
-            start = time()
-            self.create_transmission_matrix()
-            end = time()
-            dur_trm.append(end - start)
+            # Run simulation
+            age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
-            # Run one step for actual states
-            start = time()
-            age, c_from, c_to = self.run_one_step()
-            end = time()
-            dur_one.append(end - start)
-
+            # Calculation for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
 
-            # 6. Halting conditions are used in while cycle
-            # ---------------------------------------------#
         self.state_var = np.array(self.state_var)
-        run_end = time()
 
-        if len(dur_trn) > 0:
-            print("Average transition", sum(dur_trn) / len(dur_trn))
-            print("Average transmission", sum(dur_trm) / len(dur_trm))
-            print("Average run one step", sum(dur_one) / len(dur_one))
-            print("Full run:", run_end - run_start)
-        else:
-            print("There was no step in the simulation!")
+    def run_fig_1(self):
+        # Reset age, c_from, c_to
+        age, c_from, c_to = None, None, None
+
+        # initialize variable for halting condition
+        i = self.state_var[-1][self.c_idx["I"]]
+
+        # Halting condition: (i = 0) <- used in while cycle
+        while np.sum(i) > 0:
+            # Run simulation
+            age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
+
+            # Calculation for halting condition
+            i = self.state_var[-1][self.c_idx["I"]]
+
+        self.state_var = np.array(self.state_var)
+
+    def run_conf(self):
+        # Reset age, c_from, c_to
+        age, c_from, c_to = None, None, None
+
+        # initialize variable for halting condition
+        i = self.state_var[-1][self.c_idx["I"]]
+
+        # Halting condition: (i = 0) <- used in while cycle
+        while np.sum(i) > 0:
+            # Run simulation
+            age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
+
+            # Calculation for halting condition
+            i = self.state_var[-1][self.c_idx["I"]]
+
+        self.state_var = np.array(self.state_var)
+
+    def simulate(self, age, c_from, c_to):
+        # Update propensity matrices
+        if age is not None:
+            # Transition
+            self.update_transition_matrix(age=age, c_from=c_from, c_to=c_to)
+            # Transmission
+            self.create_transmission_matrix()
+        # Run one step for actual states
+        return self.run_one_step()
 
     def run_one_step(self) -> Tuple[int, int, int]:
         # Propensity matrix
@@ -170,7 +183,7 @@ class Simulator:
                 i_inf = self.c_idx[inf]
                 inf_states += inf_w * self.last_state[i_inf]
 
-            self.P_trm[:, i_from, i_to] = inf_states.dot(self.model.contact_matrix).flatten()
+            self.P_trm[:, i_from, i_to] = inf_states.dot(self.model.contact_matrix).flatten() / self.pop
 
     def update_transition_matrix(self, age, c_from, c_to):
         for ch_node in [c_to, c_from]:
@@ -180,13 +193,17 @@ class Simulator:
 
 
 def main():
+    pop = [200000/3, 200000/3, 200000/3]
+    p_death = [0.1, 0.1, 0.1]
     graph_dict = {
-        "age_groups": 1,
+        "age_groups": 3,
+        "pop": pop,
         "nodes": {
-            "S": {"init": 1000 - 11},
-            "E": {"init": 10},
-            "I": {"init": 1},
-            "R": {"init": 0}
+            "S": {"init": [pop[0] / 3 - 10, pop[1] / 3, pop[2] / 3]},
+            "E": {"init": [10, 0, 0]},
+            "I": {"init": [0, 0, 0]},
+            "R": {"init": [0, 0, 0]},
+            "D": {"init": [0, 0, 0]}
         },
         # key pair: (state_from, state_to)
         "edges": {
@@ -194,10 +211,16 @@ def main():
                 "weight": 2.5 * 0.25 / 1000
             },
             ("E", "I"): {
-                "weight": 0.2
+                "weight": 1 / 4.2
             },
             ("I", "R"): {
-                "weight": 0.25
+                "weight": [(1 - p_death[0]) * 1 / 5.2, (1 - p_death[1]) * 1 / 5.2, (1 - p_death[2]) * 1 / 5.2]
+            },
+            ("I", "D"): {
+                "weight": [p_death[0] * 1 / 5.2, p_death[1] * 1 / 5.2, p_death[2] * 1 / 5.2]
+            },
+            ("R", "S"): {
+                "weight": 1 / 180.0
             }
         },
         # key triplet: (infectious, susceptible, infected)
@@ -205,7 +228,11 @@ def main():
             ("I", "S", "E"):
             # parameter enabling various infectivity
                 {"param": 1.0}
-        }
+        },
+        "contact_matrix":
+            [[1, 1, 1],
+             [1, 1, 1],
+             [1, 1, 1]]
     }
     sim = Simulator(graph_dict=graph_dict)
     sim.run()
