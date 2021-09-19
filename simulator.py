@@ -68,7 +68,7 @@ class Simulator:
 
         self.state_var = np.array(self.state_var)
 
-    def run_after_csocs(self):
+    def run_after_csocs(self, days):
         # Reset age, c_from, c_to
         age, c_from, c_to = None, None, None
 
@@ -101,29 +101,8 @@ class Simulator:
                 i_max_position = np.argmax(day_i)
                 i_max = day_i[i_max_position]
 
-                if len(day_i) >= i_max_position+20:
-                    halting_condition = np.all(day_i[i_max_position:i_max_position+20] <= i_max)
-
-        self.state_var = np.array(self.state_var)
-
-    def run_fig_1(self):
-        # Reset age, c_from, c_to
-        age, c_from, c_to = None, None, None
-
-        # initialize variable for halting condition
-        i = self.state_var[-1][self.c_idx["I"]]
-        e = self.state_var[-1][self.c_idx["E"]]
-        actual_time = self.time_series[-1]
-
-        # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 and actual_time < 365:
-            # Run simulation
-            age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
-
-            # Calculation for halting condition
-            i = self.state_var[-1][self.c_idx["I"]]
-            e = self.state_var[-1][self.c_idx["E"]]
-            actual_time = self.time_series[-1]
+                if len(day_i) >= i_max_position+days:
+                    halting_condition = np.all(day_i[i_max_position:i_max_position+days] <= i_max)
 
         self.state_var = np.array(self.state_var)
 
