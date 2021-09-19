@@ -139,9 +139,10 @@ class Simulator:
         # Create data directory, if not exists
         os.makedirs("./data", exist_ok=True)
         # Number for minimal number of simulations
-        min_no_sim = 10
+        min_n_sim = 100
         # Threshold for convergence
-        convergence_threshold = 0.1
+        std_threshold = 2.0
+        conf_threshold = 0.95
         # Initialize simulation counter
         sim_cnt = 0
         # Create list for peak sizes
@@ -149,9 +150,9 @@ class Simulator:
         # Absolute change
         is_converged = True
 
-        while sim_cnt < min_no_sim:  # or not is_converged:
+        while sim_cnt < min_n_sim or not is_converged:
             # Halting condition: (i = 0) <- used in while cycle
-            while actual_time < 100:  # np.sum(i + e) > 0
+            while actual_time < 100 and np.sum(i + e) > 0:
                 # Run simulation
                 age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
@@ -187,12 +188,18 @@ class Simulator:
             actual_time = self.time_series[-1]
 
             # Calculation for the outer halting condition
-            if sim_cnt >= min_no_sim:
+            if sim_cnt >= min_n_sim:
                 peak_sizes_np = np.array(peak_sizes)
                 m = np.mean(peak_sizes_np)
                 s = np.std(peak_sizes_np)
                 peak_sizes_standard = (peak_sizes_np - m) / s
-                is_converged = np.all(np.abs(np.diff(peak_sizes_standard)) < convergence_threshold)
+                abs_peak_sizes = np.abs(peak_sizes_standard[-min_n_sim:])
+                n_peaks_inside_std = np.sum(abs_peak_sizes < std_threshold)
+                is_converged = n_peaks_inside_std > (conf_threshold * min_n_sim)
+                print("Simulation #" + str(sim_cnt) + ":", n_peaks_inside_std)
+            else:
+                if sim_cnt % 10 == 0:
+                    print("Simulation #" + str(sim_cnt))
         return sim_cnt
 
     def simulate(self, age, c_from, c_to):
