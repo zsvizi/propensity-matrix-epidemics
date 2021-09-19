@@ -56,7 +56,7 @@ class Simulator:
         actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 or actual_time < 365:
+        while np.sum(i + e) > 0 and actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
@@ -77,7 +77,7 @@ class Simulator:
         actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 or actual_time < 365:
+        while np.sum(i + e) > 0 and actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
@@ -98,7 +98,7 @@ class Simulator:
         actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 or actual_time < 365:
+        while np.sum(i + e) > 0 and actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
