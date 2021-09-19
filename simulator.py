@@ -205,54 +205,10 @@ class Simulator:
 
 
 def main():
-    pop_ratio = np.array([1417233, 5723488, 2590051]) / np.sum(np.array([1417233, 5723488, 2590051]))
-    pop = 20000 * pop_ratio
-    p_death = np.array([4.51228375e-06, 1.16873943e-03, 2.81312918e-02])
+    import json
 
-    alpha = 1 / 5.2
-    gamma = 1 / 5.0
-    nu = 1 / 180.0
-    beta = 0.02
+    graph_dict = json.load(open("graph_dict.json"))
 
-    graph_dict = {
-        "age_groups": 3,
-        "pop": pop,
-        "nodes": {
-            "S": {"init": list(pop - np.array([10, 0, 0]))},
-            "E": {"init": [10, 0, 0]},
-            "I": {"init": [0, 0, 0]},
-            "R": {"init": [0, 0, 0]},
-            "D": {"init": [0, 0, 0]}
-        },
-        # key pair: (state_from, state_to)
-        "edges": {
-            ("S", "E"): {
-                "weight": beta
-            },
-            ("E", "I"): {
-                "weight": alpha
-            },
-            ("I", "R"): {
-                "weight": list((1 - p_death) * gamma)
-            },
-            ("I", "D"): {
-                "weight": list(p_death * gamma)
-            },
-            ("R", "S"): {
-                "weight": nu
-            }
-        },
-        # key triplet: (infectious, susceptible, infected)
-        "transmission": {
-            ("I", "S", "E"):
-            # parameter enabling various infectivity
-                {"param": 1.0}
-        },
-        "contact_matrix":
-            [[5.66739822, 5.54786507, 1.36434151],
-             [1.37374578, 11.85006632, 1.36205744],
-             [0.74654507, 3.009871, 2.31465659]]
-    }
     sim = Simulator(graph_dict=graph_dict)
     sim.run()
 

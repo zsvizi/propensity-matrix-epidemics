@@ -11,11 +11,15 @@ class ModelGraph:
         # Indexer for the compartments: c_idx['comp'] = idx
         self.c_idx = {key: idx for idx, key in enumerate(self.nodes)}
         # List of transitions
-        self.edges = list(graph_dict["edges"].keys())
-        # Dictionary of transition weights: {edge: edge_weight}
-        self.edge_weights = {
-            edge: np.array([val["weight"]]).flatten()
-            for edge, val in graph_dict["edges"].items()}
+        self.edges = []
+        for key in graph_dict["edges"].keys():
+            edge_tuple = self.convert_to_tuple(str_key=key)
+            self.edges.append(edge_tuple)
+        # Dictionary of transition weights: {edge: edge_weight
+        self.edge_weights = dict()
+        for edge_key, val in graph_dict["edges"].items():
+            edge = self.convert_to_tuple(str_key=edge_key)
+            self.edge_weights.update({edge: np.array([val["weight"]]).flatten()})
         # Contact matrix
         if "contact_matrix" in graph_dict.keys():
             self.contact_matrix = np.array(graph_dict["contact_matrix"])
@@ -25,11 +29,14 @@ class ModelGraph:
         # Dictionary from input transmissions:
         # original {(infectious, susceptible, infected): {'param': param_value}}
         # new: {(susceptible, infected): {infectious: param_value}}
-        self.transmissions = {
-            (tr_tuple[1], tr_tuple[2]): dict()
-            for tr_tuple, _ in graph_dict["transmission"].items()
-        }
-        for tr_tuple, tr_dict in graph_dict["transmission"].items():
+        self.transmissions = dict()
+        for tr_key, _ in graph_dict["transmission"].items():
+            tr_tuple = self.convert_to_tuple(str_key=tr_key)
+            self.transmissions.update({
+                (tr_tuple[1], tr_tuple[2]): dict()
+            })
+        for tr_key, tr_dict in graph_dict["transmission"].items():
+            tr_tuple = self.convert_to_tuple(str_key=tr_key)
             self.transmissions[(tr_tuple[1], tr_tuple[2])].update(
                 {tr_tuple[0]: tr_dict["param"]}
             )
@@ -46,6 +53,14 @@ class ModelGraph:
 
         # Weighted adjacency matrix = matrix of transition parameters between compartments
         self.param_mtx = np.array([nx.to_numpy_matrix(graph) for graph in self.graph])
+
+    @staticmethod
+    def convert_to_tuple(str_key):
+        if isinstance(str_key, str):
+            tuple_key = tuple(str_key.split(","))
+        else:
+            tuple_key = str_key
+        return tuple_key
 
     def get_graphs(self) -> None:
         """
