@@ -111,9 +111,9 @@ class Simulator:
         # Absolute change
         is_converged = True
 
-        while sim_cnt < min_no_sim or not is_converged:
+        while sim_cnt < min_no_sim:  # or not is_converged:
             # Halting condition: (i = 0) <- used in while cycle
-            while np.sum(i + e) > 0 and actual_time < 365:
+            while actual_time < 100:  # np.sum(i + e) > 0
                 # Run simulation
                 age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
@@ -129,7 +129,7 @@ class Simulator:
                                 y=self.state_var,
                                 c=np.array(list(self.c_idx.keys())))
             # Save peak size
-            i_agg = np.amax(np.sum(self.state_var[:, self.c_idx["I"], :], axis=2))
+            i_agg = np.amax(np.sum(self.state_var[:, self.c_idx["I"], :], axis=1))
             peak_sizes.append(i_agg)
 
             # Increment simulation counter
