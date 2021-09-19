@@ -1,5 +1,5 @@
 venv
 /.idea
 .ipynb_checkpoints
-
+/data
 graph_dict.json

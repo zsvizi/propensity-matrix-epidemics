@@ -1,3 +1,4 @@
+import os
 import random
 from typing import Tuple
 
@@ -92,22 +93,69 @@ class Simulator:
         # Reset age, c_from, c_to
         age, c_from, c_to = None, None, None
 
-        # initialize variable for halting condition
+        # Initialize variable for halting condition
         i = self.state_var[-1][self.c_idx["I"]]
         e = self.state_var[-1][self.c_idx["E"]]
         actual_time = self.time_series[-1]
 
-        # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 and actual_time < 365:
-            # Run simulation
-            age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
+        # Create data directory, if not exists
+        os.makedirs("./data", exist_ok=True)
+        # Number for minimal number of simulations
+        min_no_sim = 10
+        # Threshold for convergence
+        convergence_threshold = 0.1
+        # Initialize simulation counter
+        sim_cnt = 0
+        # Create list for peak sizes
+        peak_sizes = []
+        # Absolute change
+        is_converged = True
 
-            # Calculation for halting condition
+        while sim_cnt < min_no_sim or not is_converged:
+            # Halting condition: (i = 0) <- used in while cycle
+            while np.sum(i + e) > 0 and actual_time < 365:
+                # Run simulation
+                age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
+
+                # Calculation for halting condition
+                i = self.state_var[-1][self.c_idx["I"]]
+                e = self.state_var[-1][self.c_idx["E"]]
+                actual_time = self.time_series[-1]
+            self.state_var = np.array(self.state_var)
+
+            # Save simulation output
+            np.savez_compressed("./data/simulation_" + str(sim_cnt) + ".npz",
+                                t=np.array(self.time_series),
+                                y=self.state_var,
+                                c=np.array(list(self.c_idx.keys())))
+            # Save peak size
+            i_agg = np.amax(np.sum(self.state_var[:, self.c_idx["I"], :], axis=2))
+            peak_sizes.append(i_agg)
+
+            # Increment simulation counter
+            sim_cnt += 1
+
+            # Reset for the new simulation
+            self.last_state = np.copy(self.init_vals)
+            self.time_series = [0.0]
+            self.state_var = [self.last_state]
+            self.create_transition_matrix()
+            self.create_transmission_matrix()
+            # Reset age, c_from, c_to
+            age, c_from, c_to = None, None, None
+            # Initialize variable for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
             e = self.state_var[-1][self.c_idx["E"]]
             actual_time = self.time_series[-1]
 
-        self.state_var = np.array(self.state_var)
+            # Calculation for the outer halting condition
+            if sim_cnt >= min_no_sim:
+                peak_sizes_np = np.array(peak_sizes)
+                m = np.mean(peak_sizes_np)
+                s = np.std(peak_sizes_np)
+                peak_sizes_standard = (peak_sizes_np - m) / s
+                is_converged = np.all(np.abs(np.diff(peak_sizes_standard)) < convergence_threshold)
+        return sim_cnt
 
     def simulate(self, age, c_from, c_to):
         # Update propensity matrices
