@@ -52,14 +52,18 @@ class Simulator:
 
         # initialize variable for halting condition
         i = self.state_var[-1][self.c_idx["I"]]
+        e = self.state_var[-1][self.c_idx["E"]]
+        actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i) > 0:
+        while np.sum(i + e) > 0 or actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
+            e = self.state_var[-1][self.c_idx["E"]]
+            actual_time = self.time_series[-1]
 
         self.state_var = np.array(self.state_var)
 
@@ -69,14 +73,18 @@ class Simulator:
 
         # initialize variable for halting condition
         i = self.state_var[-1][self.c_idx["I"]]
+        e = self.state_var[-1][self.c_idx["E"]]
+        actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i) > 0:
+        while np.sum(i + e) > 0 or actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
+            e = self.state_var[-1][self.c_idx["E"]]
+            actual_time = self.time_series[-1]
 
         self.state_var = np.array(self.state_var)
 
@@ -86,14 +94,18 @@ class Simulator:
 
         # initialize variable for halting condition
         i = self.state_var[-1][self.c_idx["I"]]
+        e = self.state_var[-1][self.c_idx["E"]]
+        actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i) > 0:
+        while np.sum(i + e) > 0 or actual_time < 365:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
+            e = self.state_var[-1][self.c_idx["E"]]
+            actual_time = self.time_series[-1]
 
         self.state_var = np.array(self.state_var)
 
@@ -193,13 +205,20 @@ class Simulator:
 
 
 def main():
-    pop = [200000/3, 200000/3, 200000/3]
-    p_death = [0.1, 0.1, 0.1]
+    pop_ratio = np.array([1417233, 5723488, 2590051]) / np.sum(np.array([1417233, 5723488, 2590051]))
+    pop = 20000 * pop_ratio
+    p_death = np.array([4.51228375e-06, 1.16873943e-03, 2.81312918e-02])
+
+    alpha = 1 / 5.2
+    gamma = 1 / 5.0
+    nu = 1 / 180.0
+    beta = 0.02
+
     graph_dict = {
         "age_groups": 3,
         "pop": pop,
         "nodes": {
-            "S": {"init": [pop[0] / 3 - 10, pop[1] / 3, pop[2] / 3]},
+            "S": {"init": list(pop - np.array([10, 0, 0]))},
             "E": {"init": [10, 0, 0]},
             "I": {"init": [0, 0, 0]},
             "R": {"init": [0, 0, 0]},
@@ -208,19 +227,19 @@ def main():
         # key pair: (state_from, state_to)
         "edges": {
             ("S", "E"): {
-                "weight": 2.5 * 0.25 / 1000
+                "weight": beta
             },
             ("E", "I"): {
-                "weight": 1 / 4.2
+                "weight": alpha
             },
             ("I", "R"): {
-                "weight": [(1 - p_death[0]) * 1 / 5.2, (1 - p_death[1]) * 1 / 5.2, (1 - p_death[2]) * 1 / 5.2]
+                "weight": list((1 - p_death) * gamma)
             },
             ("I", "D"): {
-                "weight": [p_death[0] * 1 / 5.2, p_death[1] * 1 / 5.2, p_death[2] * 1 / 5.2]
+                "weight": list(p_death * gamma)
             },
             ("R", "S"): {
-                "weight": 1 / 180.0
+                "weight": nu
             }
         },
         # key triplet: (infectious, susceptible, infected)
@@ -230,9 +249,9 @@ def main():
                 {"param": 1.0}
         },
         "contact_matrix":
-            [[1, 1, 1],
-             [1, 1, 1],
-             [1, 1, 1]]
+            [[5.66739822, 5.54786507, 1.36434151],
+             [1.37374578, 11.85006632, 1.36205744],
+             [0.74654507, 3.009871, 2.31465659]]
     }
     sim = Simulator(graph_dict=graph_dict)
     sim.run()
