@@ -1,3 +1,5 @@
+import json
+
 import networkx as nx
 import numpy as np
 
@@ -95,37 +97,7 @@ class ModelGraph:
 
 
 def main():
-    graph_dict = {
-        "age_groups": 3,
-        "nodes": {
-            "S": {"init": 1000 - 11},
-            "E": {"init": 10},
-            "I": {"init": 1},
-            "R": {"init": 0}
-        },
-        # key pair: (state_from, state_to)
-        "edges": {
-            ("S", "E"): {
-                "weight": 2.5 * 0.25 / 1000
-            },
-            ("E", "I"): {
-                "weight": 0.2
-            },
-            ("I", "R"): {
-                "weight": 0.25
-            }
-        },
-        # key triplet: (infectious, susceptible, infected)
-        "transmission": {
-            ("I", "S", "E"):
-            # parameter enabling various infectivity
-                {"param": 1.0}
-        },
-        "contact_matrix":
-            [[1, 1, 1],
-             [1, 1, 1],
-             [1, 1, 1]]
-    }
+    graph_dict = json.load(open("graph_dict.json"))
     model = ModelGraph(graph_dict=graph_dict)
     print(model.param_mtx)
 
