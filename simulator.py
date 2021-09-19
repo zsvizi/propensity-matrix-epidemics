@@ -113,7 +113,7 @@ class Simulator:
 
         while sim_cnt < min_no_sim:  # or not is_converged:
             # Halting condition: (i = 0) <- used in while cycle
-            while actual_time < 100:  # np.sum(i + e) > 0
+            while actual_time < 100:  # and np.sum(i + e) > 0:
                 # Run simulation
                 age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
