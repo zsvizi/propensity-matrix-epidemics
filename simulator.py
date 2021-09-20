@@ -14,9 +14,7 @@ class Simulator(BaseSimulator):
         age, c_from, c_to = None, None, None
 
         # initialize variable for halting condition
-        i = self.state_var[-1][self.c_idx["I"]]
-        e = self.state_var[-1][self.c_idx["E"]]
-        actual_time = self.time_series[-1]
+        actual_time, e, i = self.get_halting_parameters()
 
         # Halting condition: (i = 0) <- used in while cycle
         while np.sum(i + e) > 0 and actual_time < 365:
@@ -24,9 +22,7 @@ class Simulator(BaseSimulator):
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
-            i = self.state_var[-1][self.c_idx["I"]]
-            e = self.state_var[-1][self.c_idx["E"]]
-            actual_time = self.time_series[-1]
+            actual_time, e, i = self.get_halting_parameters()
 
         self.state_var = np.array(self.state_var)
 
@@ -35,9 +31,7 @@ class Simulator(BaseSimulator):
         age, c_from, c_to = None, None, None
 
         # initialize variable for halting condition
-        i = self.state_var[-1][self.c_idx["I"]]
-        e = self.state_var[-1][self.c_idx["E"]]
-        actual_time = self.time_series[-1]
+        actual_time, e, i = self.get_halting_parameters()
 
         # Halting condition: (i = 0) <- used in while cycle
         halting_condition = False
@@ -48,11 +42,9 @@ class Simulator(BaseSimulator):
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
-            i = self.state_var[-1][self.c_idx["I"]]
-            e = self.state_var[-1][self.c_idx["E"]]
+            actual_time, e, i = self.get_halting_parameters()
 
             if len(self.time_series) >= 2:
-                actual_time = self.time_series[-1]
                 prev_time = self.time_series[-2]
                 if prev_time <= day < actual_time:
                     day += 1
@@ -73,9 +65,7 @@ class Simulator(BaseSimulator):
         age, c_from, c_to = None, None, None
 
         # Initialize variable for halting condition
-        i = self.state_var[-1][self.c_idx["I"]]
-        e = self.state_var[-1][self.c_idx["E"]]
-        actual_time = self.time_series[-1]
+        actual_time, e, i = self.get_halting_parameters()
 
         # Create data directory, if not exists
         os.makedirs("./data", exist_ok=True)
@@ -98,9 +88,7 @@ class Simulator(BaseSimulator):
                 age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
                 # Calculation for halting condition
-                i = self.state_var[-1][self.c_idx["I"]]
-                e = self.state_var[-1][self.c_idx["E"]]
-                actual_time = self.time_series[-1]
+                actual_time, e, i = self.get_halting_parameters()
             self.state_var = np.array(self.state_var)
 
             # Save simulation output
@@ -120,9 +108,7 @@ class Simulator(BaseSimulator):
             # Reset age, c_from, c_to
             age, c_from, c_to = None, None, None
             # Initialize variable for halting condition
-            i = self.state_var[-1][self.c_idx["I"]]
-            e = self.state_var[-1][self.c_idx["E"]]
-            actual_time = self.time_series[-1]
+            actual_time, e, i = self.get_halting_parameters()
 
             # Calculation for the outer halting condition
             if sim_cnt >= min_n_sim:
@@ -138,6 +124,12 @@ class Simulator(BaseSimulator):
                 if sim_cnt % 10 == 0:
                     print("Simulation #" + str(sim_cnt))
         return sim_cnt
+
+    def get_halting_parameters(self):
+        i = self.state_var[-1][self.c_idx["I"]]
+        e = self.state_var[-1][self.c_idx["E"]]
+        actual_time = self.time_series[-1]
+        return actual_time, e, i
 
     def reset_for_new_simulation(self, init=None):
         if init is None:
