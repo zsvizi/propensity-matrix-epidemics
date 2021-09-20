@@ -92,11 +92,11 @@ class Simulator:
             if len(self.time_series) >= 2:
                 actual_time = self.time_series[-1]
                 prev_time = self.time_series[-2]
-                if prev_time < day <= actual_time:
+                if prev_time <= day < actual_time:
                     day += 1
                     aggregated = np.sum(self.state_var, axis=2)
                     i_values = aggregated[:, self.c_idx["I"]]
-                    day_i.append(i_values[-1])
+                    day_i.append(i_values[-2])
 
                 i_max_position = np.argmax(day_i)
                 i_max = day_i[i_max_position]
