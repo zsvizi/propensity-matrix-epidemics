@@ -68,7 +68,7 @@ class Simulator:
 
         self.state_var = np.array(self.state_var)
 
-    def run_fig_1(self):
+    def run_after_csocs(self, days):
         # Reset age, c_from, c_to
         age, c_from, c_to = None, None, None
 
@@ -78,14 +78,31 @@ class Simulator:
         actual_time = self.time_series[-1]
 
         # Halting condition: (i = 0) <- used in while cycle
-        while np.sum(i + e) > 0 and actual_time < 365:
+        halting_condition = False
+        day = 1
+        day_i = [np.sum(i)]
+        while np.sum(i + e) > 0 and actual_time < 365 and not halting_condition:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
 
             # Calculation for halting condition
             i = self.state_var[-1][self.c_idx["I"]]
             e = self.state_var[-1][self.c_idx["E"]]
-            actual_time = self.time_series[-1]
+
+            if len(self.time_series) >= 2:
+                actual_time = self.time_series[-1]
+                prev_time = self.time_series[-2]
+                if prev_time < day <= actual_time:
+                    day += 1
+                    aggregated = np.sum(self.state_var, axis=2)
+                    i_values = aggregated[:, self.c_idx["I"]]
+                    day_i.append(i_values[-1])
+
+                i_max_position = np.argmax(day_i)
+                i_max = day_i[i_max_position]
+
+                if len(day_i) >= i_max_position+days:
+                    halting_condition = np.all(day_i[i_max_position:i_max_position+days] <= i_max)
 
         self.state_var = np.array(self.state_var)
 
@@ -265,7 +282,7 @@ def main():
     graph_dict = json.load(open("graph_dict.json"))
 
     sim = Simulator(graph_dict=graph_dict)
-    sim.run()
+    sim.run_after_csocs()
 
 
 if __name__ == '__main__':
