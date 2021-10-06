@@ -38,30 +38,40 @@ class Simulator(BaseSimulator):
         age, c_from, c_to = None, None, None
         # initialize variable for halting condition
         actual_time, e, i = self.get_halting_parameters()
-        # Halting condition: (i = 0) <- used in while cycle
+        # Halting condition
         halting_condition = False
+        # Variables for daily sampling
         day = 1
         day_i = [np.sum(i)]
+        days_l = [day]
         # Loop for one stochastic simulation with halting conditions for state and time
         while np.sum(i + e) > 0 and actual_time < 365 and not halting_condition:
             # Run simulation
             age, c_from, c_to = self.simulate(age=age, c_from=c_from, c_to=c_to)
             # Calculation for halting condition
             actual_time, e, i = self.get_halting_parameters()
-            # TODO: use generate_daily_data function here
+            # Update halting condition
             if len(self.time_series) >= 2:
                 prev_time = self.time_series[-2]
-                if prev_time <= day < actual_time:
-                    day += 1
-                    aggregated = np.sum(self.state_var, axis=2)
-                    i_values = aggregated[:, self.c_idx["I"]]
+                if (actual_time - prev_time) > 1.0:
+                    # Fill jumped dates with constant data
+                    i_values = np.sum(self.state_var, axis=2)[:, self.c_idx["I"]]
+                    for d in range(day, int(actual_time) + 1):
+                        days_l.append(d)
+                        day_i.append(i_values[-2])
+                    day = int(actual_time) + 1
+                # Check whether we changed from one day to another
+                elif prev_time <= day < actual_time:
+                    days_l.append(day)
+                    day = int(actual_time) + 1
+                    i_values = np.sum(self.state_var, axis=2)[:, self.c_idx["I"]]
                     day_i.append(i_values[-2])
                 # calculation for updating the halting condition
                 i_max_position = np.argmax(day_i)
                 i_max = day_i[i_max_position]
                 # update halting condition
-                if len(day_i) >= i_max_position+days:
-                    halting_condition = np.all(day_i[i_max_position:i_max_position+days] <= i_max)
+                if days_l[-1] >= i_max_position + days:
+                    halting_condition = np.all(day_i[i_max_position:i_max_position + days] <= i_max)
         # Convert list to numpy array for later usage
         self.state_var = np.array(self.state_var)
 
@@ -159,16 +169,17 @@ class Simulator(BaseSimulator):
 
 
 def generate_daily_data(time_data: np.ndarray,
-                        values: np.ndarray) -> Tuple[list, list]:
+                        values: np.ndarray,
+                        day: int = 1) -> Tuple[list, list]:
     """
     Generates days from input time data array and
     daily sampled values from input values array
+    :param int day: starting day of the simulation
     :param np.ndarray time_data: time points
     :param np.ndarray values: values associated with the time points
     :return Tuple[list, list]: (days, daily sampled values)
     """
     # Initialization
-    day = 1  # day to check ahead of actual time
     days, day_i = [], []
     t_prev, i_prev = None, None
     # Loop through all time steps taking the aggregated infections
