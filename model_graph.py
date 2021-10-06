@@ -111,8 +111,8 @@ class ModelGraph:
     @staticmethod
     def convert_to_tuple(str_key: str) -> tuple:
         """
-        Convert string tuple "(x,y,...)" to tuple of strings ("x", "y",...)
-        :param str str_key: string tuple
+        Convert string "x,y,..." to tuple of strings ("x", "y",...)
+        :param str str_key: sequence given as a string
         :return tuple: tuple of strings
         """
         if isinstance(str_key, str):
