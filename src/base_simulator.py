@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy as np
 
-from model_graph import ModelGraph
+from src.model_graph import ModelGraph
 
 
 class BaseSimulator:

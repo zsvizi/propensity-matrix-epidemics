@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy as np
 
-from base_simulator import BaseSimulator
+from src.base_simulator import BaseSimulator
 
 
 class Simulator(BaseSimulator):
@@ -85,7 +85,7 @@ class Simulator(BaseSimulator):
         # Initialize variable for halting condition
         actual_time, e, i = self.get_halting_parameters()
         # Create data directory, if not exists
-        os.makedirs("./data", exist_ok=True)
+        os.makedirs("../data", exist_ok=True)
         # Number for minimal number of simulations
         min_n_sim = 100
         # Maximal time until the simulations run (calibrated for parametrization in demo.ipynb)
@@ -212,7 +212,7 @@ def generate_daily_data(time_data: np.ndarray,
 def main():
     import json
 
-    graph_dict = json.load(open("graph_dict.json"))
+    graph_dict = json.load(open("../params/graph_dict.json"))
 
     sim = Simulator(graph_dict=graph_dict)
     sim.run_after_peak()

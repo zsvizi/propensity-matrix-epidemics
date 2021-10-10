@@ -123,7 +123,7 @@ class ModelGraph:
 
 
 def main():
-    graph_dict = json.load(open("graph_dict.json"))
+    graph_dict = json.load(open("../params/graph_dict.json"))
     model = ModelGraph(graph_dict=graph_dict)
     print(model.param_mtx)
 
